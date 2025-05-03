@@ -28,7 +28,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <div className="px-4 md:px-0">{children}</div>
+            <div className="px-4 md:px-6 lg:px-8 xl:px-10">{children}</div>
           </AuthProvider>
           <Toaster />
         </ThemeProvider>

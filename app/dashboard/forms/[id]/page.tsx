@@ -3,27 +3,8 @@
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { AlertCircle, Copy, Grip, Plus, Trash2 } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -34,14 +15,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  DropResult,
-} from "@hello-pangea/dnd";
 import { useToast } from "@/hooks/use-toast";
 import {
   Breadcrumb,
@@ -51,8 +25,11 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import { Form, Question } from "@/types";
+import { Form } from "@/types";
+import { EditTab } from "@/components/forms/tabs/edit-tab";
+import { PreviewTab } from "@/components/forms/tabs/preview-tab";
+import { SettingsTab } from "@/components/forms/tabs/settings-tab";
+import { ResponsesTab } from "@/components/forms/tabs/responses-tab";
 
 export default function EditForm({
   params,
@@ -63,10 +40,6 @@ export default function EditForm({
   const { id } = use(params);
   const { toast } = useToast();
   const [form, setForm] = useState<Form | null>(null);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [published, setPublished] = useState(false);
-  const [questions, setQuestions] = useState<Question[]>([]);
   const [activeTab, setActiveTab] = useState("edit");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -91,7 +64,11 @@ export default function EditForm({
   // Handle browser back/forward navigation
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (title || description || questions.some((q) => q.text)) {
+      if (
+        form?.title ||
+        form?.description ||
+        form?.questions.some((q) => q.text)
+      ) {
         e.preventDefault();
         e.returnValue = "";
       }
@@ -99,7 +76,7 @@ export default function EditForm({
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [title, description, questions]);
+  }, [form]);
 
   useEffect(() => {
     const fetchForm = async () => {
@@ -111,18 +88,6 @@ export default function EditForm({
         }
         const data = await res.json();
         setForm(data);
-        setTitle(data.title);
-        setDescription(data.description || "");
-        setPublished(data.published);
-        setQuestions(
-          data.questions.map((q: Question) => ({
-            id: q.id,
-            text: q.text,
-            type: q.type,
-            required: q.required,
-            options: q.options,
-          })),
-        );
       } catch (error) {
         console.error("Error fetching form:", error);
         setError("Failed to load form");
@@ -134,97 +99,37 @@ export default function EditForm({
     fetchForm();
   }, [id]);
 
-  const addQuestion = () => {
-    setQuestions([
-      ...questions,
-      {
-        id: Date.now().toString(),
-        text: "",
-        type: "text",
-        required: false,
-      },
-    ]);
-  };
-
-  const removeQuestion = (index: number) => {
-    if (questions.length === 1) {
-      return;
-    }
-    const newQuestions = [...questions];
-    newQuestions.splice(index, 1);
-    setQuestions(newQuestions);
-  };
-
-  const updateQuestion = (
-    index: number,
-    field: keyof Question,
-    value: string | boolean | string[] | null,
-  ) => {
-    const newQuestions = [...questions];
-    newQuestions[index] = {
-      ...newQuestions[index],
-      [field]: value,
+  useEffect(() => {
+    const fetchFormWithResponses = async () => {
+      const { id } = await params;
+      try {
+        const res = await fetch(`/api/forms/${id}/responses`);
+        if (!res.ok) {
+          throw new Error("Failed to fetch form responses");
+        }
+        const data = await res.json();
+        setForm(data);
+      } catch (error) {
+        console.error("Error fetching form responses:", error);
+        setError("Failed to load form responses");
+      } finally {
+        setIsLoading(false);
+      }
     };
-    setQuestions(newQuestions);
-  };
 
-  const addOption = (questionIndex: number) => {
-    const newQuestions = [...questions];
-    const question = newQuestions[questionIndex];
-    const options = question.options || [];
-    newQuestions[questionIndex] = {
-      ...question,
-      options: [...options, ""],
-    };
-    setQuestions(newQuestions);
-  };
-
-  const updateOption = (
-    questionIndex: number,
-    optionIndex: number,
-    value: string,
-  ) => {
-    const newQuestions = [...questions];
-    const question = newQuestions[questionIndex];
-    const options = [...(question.options || [])];
-    options[optionIndex] = value;
-    newQuestions[questionIndex] = {
-      ...question,
-      options,
-    };
-    setQuestions(newQuestions);
-  };
-
-  const removeOption = (questionIndex: number, optionIndex: number) => {
-    const newQuestions = [...questions];
-    const question = newQuestions[questionIndex];
-    const options = [...(question.options || [])];
-    options.splice(optionIndex, 1);
-    newQuestions[questionIndex] = {
-      ...question,
-      options,
-    };
-    setQuestions(newQuestions);
-  };
-
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
-
-    const items = Array.from(questions);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-
-    setQuestions(items);
-  };
+    fetchFormWithResponses();
+  }, [params]);
 
   const validateForm = () => {
-    if (!title.trim()) {
+    if (!form) return false;
+
+    if (!form.title.trim()) {
       setError("Form title is required");
       return false;
     }
 
-    for (let i = 0; i < questions.length; i++) {
-      const question = questions[i];
+    for (let i = 0; i < form.questions.length; i++) {
+      const question = form.questions[i];
       if (!question.text.trim()) {
         setError(`Question ${i + 1} text is required`);
         return false;
@@ -247,7 +152,36 @@ export default function EditForm({
     return true;
   };
 
+  const isFormValid = () => {
+    if (!form) return false;
+
+    if (!form.title.trim()) {
+      return false;
+    }
+
+    for (let i = 0; i < form.questions.length; i++) {
+      const question = form.questions[i];
+      if (!question.text.trim()) {
+        return false;
+      }
+
+      if (["multipleChoice", "checkbox", "dropdown"].includes(question.type)) {
+        if (!question.options || question.options.length < 2) {
+          return false;
+        }
+
+        for (let j = 0; j < question.options.length; j++) {
+          if (!question.options[j].trim()) {
+            return false;
+          }
+        }
+      }
+    }
+    return true;
+  };
+
   const handleSave = async () => {
+    if (!form) return;
     setError(null);
     setIsSaving(true);
 
@@ -258,10 +192,10 @@ export default function EditForm({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          title,
-          description,
-          published,
-          questions: questions.map((q) => ({
+          title: form.title,
+          description: form.description,
+          published: form.published,
+          questions: form.questions.map((q) => ({
             text: q.text,
             type: q.type,
             required: q.required,
@@ -286,15 +220,6 @@ export default function EditForm({
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const copyFormLink = () => {
-    const link = `${window.location.origin}/forms/${id}`;
-    navigator.clipboard.writeText(link);
-    toast({
-      title: "Link copied",
-      description: "Form link copied to clipboard.",
-    });
   };
 
   const handleDelete = async () => {
@@ -325,7 +250,11 @@ export default function EditForm({
   };
 
   const handleNavigation = (path: string) => {
-    if (title || description || questions.some((q) => q.text)) {
+    if (
+      form?.title ||
+      form?.description ||
+      form?.questions.some((q) => q.text)
+    ) {
       setPendingNavigation(path);
       setIsCancelDialogOpen(true);
     } else {
@@ -343,7 +272,9 @@ export default function EditForm({
 
   // Truncate title if longer than 30 characters
   const truncatedTitle =
-    title.length > 30 ? `${title.substring(0, 27)}...` : title;
+    form?.title && form.title.length > 30
+      ? `${form.title.substring(0, 27)}...`
+      : form?.title || "Untitled Form";
 
   if (isLoading) {
     return (
@@ -355,7 +286,7 @@ export default function EditForm({
 
   if (error && !form) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="max-w-3xl mx-auto py-8">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
@@ -370,6 +301,8 @@ export default function EditForm({
       </div>
     );
   }
+
+  if (!form) return null;
 
   return (
     <div className="container mx-auto py-8">
@@ -390,7 +323,7 @@ export default function EditForm({
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbPage className="max-w-[200px] truncate">
-                {truncatedTitle || "Untitled Form"}
+                {truncatedTitle}
               </BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
@@ -408,363 +341,27 @@ export default function EditForm({
       >
         <TabsList className="mb-4">
           <TabsTrigger value="edit">Edit</TabsTrigger>
-          <TabsTrigger value="preview">Preview</TabsTrigger>
+          <TabsTrigger value="preview" disabled={!isFormValid()}>
+            Preview
+          </TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="responses">Responses</TabsTrigger>
         </TabsList>
-        <TabsContent value="edit" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Form Details</CardTitle>
-              <CardDescription>
-                Set the title and description for your form
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter form title"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description (optional)</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Enter form description"
-                  rows={3}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="questions">
-              {(provided) => (
-                <div
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                  className="space-y-4"
-                >
-                  {questions.map((question, index) => (
-                    <Draggable
-                      key={question.id}
-                      draggableId={question.id}
-                      index={index}
-                    >
-                      {(provided) => (
-                        <Card
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          className="relative"
-                        >
-                          <CardHeader>
-                            <CardTitle className="text-base flex gap-2 items-center">
-                              <div
-                                {...provided.dragHandleProps}
-                                className="cursor-move text-muted-foreground"
-                              >
-                                <Grip className="h-5 w-5" />
-                              </div>
-                              Question {index + 1}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                              <Label htmlFor={`question-${index}`}>
-                                Question Text
-                              </Label>
-                              <Input
-                                id={`question-${index}`}
-                                value={question.text}
-                                onChange={(e) =>
-                                  updateQuestion(index, "text", e.target.value)
-                                }
-                                placeholder="Enter question text"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`question-type-${index}`}>
-                                Question Type
-                              </Label>
-                              <Select
-                                value={question.type}
-                                onValueChange={(value) =>
-                                  updateQuestion(index, "type", value)
-                                }
-                              >
-                                <SelectTrigger id={`question-type-${index}`}>
-                                  <SelectValue placeholder="Select question type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="text">Text</SelectItem>
-                                  <SelectItem value="multipleChoice">
-                                    Multiple Choice
-                                  </SelectItem>
-                                  <SelectItem value="checkbox">
-                                    Checkbox
-                                  </SelectItem>
-                                  <SelectItem value="dropdown">
-                                    Dropdown
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            {[
-                              "multipleChoice",
-                              "checkbox",
-                              "dropdown",
-                            ].includes(question.type) && (
-                              <div className="space-y-2">
-                                <Label>Options</Label>
-                                <div className="space-y-2">
-                                  {(question.options || []).map(
-                                    (option, optionIndex) => (
-                                      <div
-                                        key={optionIndex}
-                                        className="flex items-center gap-2"
-                                      >
-                                        <Input
-                                          value={option}
-                                          onChange={(e) =>
-                                            updateOption(
-                                              index,
-                                              optionIndex,
-                                              e.target.value,
-                                            )
-                                          }
-                                          placeholder={`Option ${optionIndex + 1}`}
-                                        />
-                                        <Button
-                                          type="button"
-                                          variant="destructive"
-                                          size="icon"
-                                          onClick={() =>
-                                            removeOption(index, optionIndex)
-                                          }
-                                          disabled={
-                                            (question.options || []).length <= 2
-                                          }
-                                        >
-                                          <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                      </div>
-                                    ),
-                                  )}
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    className="w-full md:w-fit mt-2"
-                                    onClick={() => addOption(index)}
-                                  >
-                                    <Plus className="mr-1 h-4 w-4" /> Add Option
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
-                          </CardContent>
-                          <CardFooter className="flex justify-between">
-                            <div className="flex items-center space-x-2">
-                              <Switch
-                                id={`required-${index}`}
-                                checked={question.required}
-                                onCheckedChange={(checked) =>
-                                  updateQuestion(index, "required", checked)
-                                }
-                              />
-                              <Label htmlFor={`required-${index}`}>
-                                Required
-                              </Label>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              onClick={() => removeQuestion(index)}
-                              disabled={questions.length === 1}
-                            >
-                              Remove
-                            </Button>
-                          </CardFooter>
-                        </Card>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={addQuestion}
-          >
-            <Plus className="mr-1 h-4 w-4" /> Add Question
-          </Button>
+        <TabsContent value="edit">
+          <EditTab form={form} onFormChange={setForm} />
         </TabsContent>
         <TabsContent value="preview">
-          <Card>
-            <CardHeader>
-              <CardTitle>{title || "Untitled Form"}</CardTitle>
-              {description && <CardDescription>{description}</CardDescription>}
-            </CardHeader>
-            <Separator />
-            <CardContent className="space-y-6">
-              {questions.map((question, index) => (
-                <div key={index} className="space-y-2">
-                  <Label>
-                    {question.text || `Question ${index + 1}`}
-                    {question.required && (
-                      <span className="ml-1 text-red-500">*</span>
-                    )}
-                  </Label>
-                  {question.type === "text" && (
-                    <Input placeholder="Your answer" disabled />
-                  )}
-                  {question.type === "multipleChoice" && (
-                    <div className="space-y-2">
-                      {(question.options || []).map((option, optionIndex) => (
-                        <div
-                          key={optionIndex}
-                          className="flex items-center space-x-2"
-                        >
-                          <input
-                            type="radio"
-                            id={`preview-${index}-${optionIndex}`}
-                            name={`preview-${index}`}
-                            disabled
-                          />
-                          <Label htmlFor={`preview-${index}-${optionIndex}`}>
-                            {option || `Option ${optionIndex + 1}`}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {question.type === "checkbox" && (
-                    <div className="space-y-2">
-                      {(question.options || []).map((option, optionIndex) => (
-                        <div
-                          key={optionIndex}
-                          className="flex items-center space-x-2"
-                        >
-                          <input
-                            type="checkbox"
-                            id={`preview-${index}-${optionIndex}`}
-                            disabled
-                          />
-                          <Label htmlFor={`preview-${index}-${optionIndex}`}>
-                            {option || `Option ${optionIndex + 1}`}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {question.type === "dropdown" && (
-                    <Select disabled>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select an option" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(question.options || []).map((option, optionIndex) => (
-                          <SelectItem
-                            key={optionIndex}
-                            value={`option-${optionIndex}`}
-                          >
-                            {option || `Option ${optionIndex + 1}`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-              ))}
-            </CardContent>
-            <Separator />
-            <CardFooter className="flex justify-between items-center py-4">
-              <Button disabled variant="outline">
-                Clear all
-              </Button>
-              <Button disabled>Submit</Button>
-            </CardFooter>
-          </Card>
+          <PreviewTab form={form} />
         </TabsContent>
         <TabsContent value="settings">
-          <Card>
-            <CardHeader>
-              <CardTitle>Form Settings</CardTitle>
-              <CardDescription>Configure your form settings</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="published"
-                  checked={published}
-                  onCheckedChange={setPublished}
-                />
-                <Label htmlFor="published">Published</Label>
-              </div>
-              <div className="space-y-2">
-                <Label>Form Link</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    readOnly
-                    value={`${typeof window !== "undefined" ? window.location.origin : ""}/forms/${id}`}
-                  />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={copyFormLink}
-                    title="Copy link"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-2">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => router.push(`/dashboard/forms/${id}/responses`)}
-              >
-                View Responses
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" className="w-full">
-                    Delete Form
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete
-                      the form and all its responses.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      variant="destructive"
-                      onClick={handleDelete}
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </CardFooter>
-          </Card>
+          <SettingsTab
+            form={form}
+            onFormChange={setForm}
+            onDelete={handleDelete}
+          />
+        </TabsContent>
+        <TabsContent value="responses">
+          <ResponsesTab form={form} />
         </TabsContent>
       </Tabs>
 

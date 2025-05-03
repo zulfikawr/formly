@@ -25,12 +25,9 @@ export default function HomePage() {
         if (res.ok) {
           const userData = await res.json();
           setUser(userData);
-        } else {
-          router.push("/signin");
         }
       } catch (error) {
         console.error("Failed to fetch user", error);
-        router.push("/signin");
       } finally {
         setLoading(false);
       }
@@ -69,7 +66,7 @@ export default function HomePage() {
           ) : (
             <nav className="flex items-center gap-4">
               <Link href="/signin">
-                <Button variant="ghost">Sign in</Button>
+                <Button variant="outline">Sign in</Button>
               </Link>
               <Link href="/signup">
                 <Button>Get started</Button>
@@ -79,16 +76,15 @@ export default function HomePage() {
         </div>
       </header>
       <main className="flex-1">
-        <section className="w-full py-12 md:py-24 lg:py-32">
+        <section className="flex h-[calc(100vh-10rem)] items-center justify-center">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+            <div className="flex flex-col items-center justify-center space-y-8 text-center">
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
                   Create Forms with Ease
                 </h1>
-                <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl dark:text-gray-400">
-                  Build beautiful forms, collect responses, and analyze data
-                  with our intuitive form builder.
+                <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
+                  Build forms, collect responses, and analyze data with Formly.
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
@@ -120,10 +116,27 @@ export default function HomePage() {
           </div>
         </section>
       </main>
-      <footer className="border-t py-6 md:py-0">
-        <div className="container mx-auto flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row">
+      <footer className="border-t py-4 md:py-0">
+        <div className="container mx-auto flex flex-col items-center justify-center gap-4 md:h-16 md:flex-row">
           <p className="text-center text-sm leading-loose text-gray-500 md:text-left">
-            © {new Date().getFullYear()} Formly. All rights reserved.
+            © {new Date().getFullYear()} Formly{" · "}
+            <Link
+              href="https://creativecommons.org/licenses/by-nc-sa/4.0/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline text-xs md:text-sm"
+            >
+              CC BY-NC-SA 4.0
+            </Link>
+            {" · "}
+            <Link
+              href="https://github.com/zulfikawr/formly"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline text-xs md:text-sm"
+            >
+              Open Source Software (OSS).
+            </Link>
           </p>
         </div>
       </footer>

@@ -4,12 +4,9 @@ import { jwtVerify } from "jose";
 import { prisma } from "@/lib/db";
 import { Question } from "@/types";
 
-type Params = Promise<{ id: string }>
+type Params = Promise<{ id: string }>;
 
-export async function GET(
-  req: Request,
-  { params }: { params: Params },
-) {
+export async function GET(req: Request, { params }: { params: Params }) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("auth-token")?.value;
@@ -106,10 +103,7 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  req: Request,
-  { params }: { params: Params },
-) {
+export async function PUT(req: Request, { params }: { params: Params }) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("auth-token")?.value;
@@ -251,10 +245,7 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  req: Request,
-  { params }: { params: Params },
-) {
+export async function DELETE(req: Request, { params }: { params: Params }) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("auth-token")?.value;

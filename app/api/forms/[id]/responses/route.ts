@@ -8,12 +8,9 @@ type CreateAnswerInput = {
   value: string;
 };
 
-type Params = Promise<{ id: string }>
+type Params = Promise<{ id: string }>;
 
-export async function GET(
-  req: Request,
-  { params }: { params: Params },
-) {
+export async function GET(req: Request, { params }: { params: Params }) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("auth-token")?.value;
@@ -76,10 +73,7 @@ export async function GET(
   }
 }
 
-export async function POST(
-  req: Request,
-  { params }: { params: Params },
-) {
+export async function POST(req: Request, { params }: { params: Params }) {
   try {
     const { id } = await params;
     const body = await req.json();

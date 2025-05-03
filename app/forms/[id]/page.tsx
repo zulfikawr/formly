@@ -98,6 +98,19 @@ export default function FormView({
     }
   }, [error, toast]);
 
+  // Handle browser back/forward navigation
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (answers.some((a) => a.value)) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [answers]);
+
   const updateAnswer = (questionId: string, value: string) => {
     setAnswers(
       answers.map((answer) =>

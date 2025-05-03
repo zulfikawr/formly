@@ -213,7 +213,7 @@ export default function Dashboard() {
                         <DropdownMenuContent align="start">
                           <DropdownMenuItem asChild>
                             <Link href={`/dashboard/forms/${form.id}`}>
-                              Edit
+                              Manage
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem
@@ -301,7 +301,7 @@ export default function Dashboard() {
                 </CardContent>
                 <CardFooter className="flex justify-between">
                   <Skeleton className="h-9 w-16" />
-                  <Skeleton className="h-9 w-24" />
+                  <Skeleton className="h-9 w-16" />
                 </CardFooter>
               </Card>
             ))
@@ -328,7 +328,9 @@ export default function Dashboard() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start">
                         <DropdownMenuItem asChild>
-                          <Link href={`/dashboard/forms/${form.id}`}>Edit</Link>
+                          <Link href={`/dashboard/forms/${form.id}`}>
+                            Manage
+                          </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleCopyLink(form.id)}
@@ -387,11 +389,31 @@ export default function Dashboard() {
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-between">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive">Delete</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently
+                          delete the form and all its responses.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          variant="destructive"
+                          onClick={() => handleDelete(form.id)}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                   <Link href={`/dashboard/forms/${form.id}`}>
-                    <Button variant="outline">Edit</Button>
-                  </Link>
-                  <Link href={`/dashboard/forms/${form.id}/responses`}>
-                    <Button variant="secondary">View Responses</Button>
+                    <Button>Manage</Button>
                   </Link>
                 </CardFooter>
               </Card>

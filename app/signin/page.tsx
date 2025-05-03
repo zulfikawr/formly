@@ -17,7 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export default function SignIn() {
   const router = useRouter();
@@ -83,7 +83,10 @@ export default function SignIn() {
         <CardContent>
           {error && (
             <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
+              <AlertTitle className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                Error
+              </AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
@@ -104,7 +107,7 @@ export default function SignIn() {
                 <Label htmlFor="password">Password</Label>
                 <Link
                   href="/forgot-password"
-                  className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                  className="text-sm font-medium text-muted-foreground underline-offset-4 hover:underline"
                 >
                   Forgot password?
                 </Link>
